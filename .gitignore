@@ -26,4 +26,4 @@
 .env
 
 # GitHub configuration folder
-/.github
+*copilot-instructions.md
