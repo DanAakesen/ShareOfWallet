@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="PCFComponents.Core" constructor="SoW" version="1.0.0" display-name-key="SoW" description-key="Share Of Wallet" control-type="virtual" >
+    <!--external-service-usage node declares whether this 3rd party PCF control is using external service or not, if yes, this control will be considered as premium and please also add the external domain it is using.
+    If it is not using any external service, please set the enabled="false" and DO NOT add any domain below. The "enabled" will be false by default.
+    Example1:
+      <external-service-usage enabled="true">
+        <domain>www.Microsoft.com</domain>
+      </external-service-usage>
+    Example2:
+      <external-service-usage enabled="false">
+      </external-service-usage>
+    -->
+    <external-service-usage enabled="false">
+      <!--UNCOMMENT TO ADD EXTERNAL DOMAINS
+      <domain></domain>
+      <domain></domain>
+      -->
+    </external-service-usage>
+
+    <property name="AzureMapsKey" display-name-key="Azure Maps Key" of-type="SingleLine.Text" required="true" usage="input" />
+    <property name="ShowVisual" display-name-key="Show chart?" description-key="Default is true, set false to hide" of-type="SingleLine.Text" usage="input" />
+    <property name="ShowCard" display-name-key="Show Map Card?" description-key="Default is true, set false to hide" of-type="SingleLine.Text" usage="input" />
+    <property name="ShowCountriesWithOutRevenue" display-name-key="Show countries without revenue?" description-key="Default is false, set true to hide coutnries without revenue" of-type="SingleLine.Text" usage="input" />
+
+    <!--Kept here as propery as propery-set does not support the datatype multipleLine dataype-->
+    <property name="jsonPolygonField" display-name-key="JSON Polygon Field" of-type="SingleLine.Text" usage="input" required="true" /> 
+
+    <!-- dataset node represents a set of entity records on CDS; allow more than one datasets -->
+    <!-- SOW Dataset -->
+    <data-set name="ViewDataset" display-name-key="Dataset to show on the share of wallet map">
+        <property-set name="CountryField" display-name-key="Country Field" of-type="Lookup.Simple" usage="bound" required="true"/>
+        <property-set name="RegionField" display-name-key="Region Field" of-type="Lookup.Simple" usage="bound" required="true"/>
+        <property-set name="CurrentYearField" display-name-key="Current Year Field" of-type="Currency" usage="bound" />
+        <property-set name="LastYearField" display-name-key="Last Year Field" of-type="Currency" usage="bound" />
+        <property-set name="YoYProcentField" display-name-key="YoY change Percent Field" of-type="Decimal" usage="bound" />
+        <property-set name="RGBAColorOverlay" display-name-key="Azure Maps RGBA Color Overlay per sow/country" of-type="SingleLine.Text" usage="bound" />
+    </data-set>
+
+    <!-- Dataset for Products -->
+    <data-set name="ProductDataset" display-name-key="Dataset for Products">
+      <property-set name="ProductName" display-name-key="Product Name" of-type="SingleLine.Text" usage="bound" required="true"/>
+      <property-set name="SOWLookupField" display-name-key="SOW Lookup Field" of-type="Lookup.Simple" usage="bound" required="true"/>
+      <property-set name="Revenue" display-name-key="Product Renvenue" of-type="Currency" usage="bound" required="true"/>
+    </data-set>
+
+    <!-- Dataset for opportunites -->
+    <data-set name="OpportunityDataset" display-name-key="Dataset for Opportunities">
+      <property-set name="OpportunityName" display-name-key="Opportunity Name or Topic" of-type="SingleLine.Text" usage="bound" required="false"/>
+      <property-set name="OppToSOWLookupField" display-name-key="SOW Lookup Field" of-type="Lookup.Simple" usage="bound" required="false"/>
+      <property-set name="OppRevenue" display-name-key="Opportunity Revenue" of-type="Currency" usage="bound" required="false"/>
+      <property-set name="WinLossRatio" display-name-key="Win Loss Ratio" of-type="Whole.None" usage="bound" required="false"/>
+      <property-set name="CloseDate" display-name-key="Opportunity Close Date" of-type="DateAndTime.DateOnly" usage="bound" required="false"/>
+      <property-set name="Probability" display-name-key="Opportunity Probability" of-type="Whole.None" usage="bound" required="false"/>
+      <property-set name="PredictedOutcome" display-name-key="Predicted Outcome" of-type="Whole.None" usage="bound" required="false"/>
+      <property-set name="PredictionConfidence" display-name-key="Prediction Confidence" of-type="Decimal" usage="bound" required="false"/>
+      <property-set name="IsOutlier" display-name-key="Is Outlier" of-type="TwoOptions" usage="bound" required="false"/>
+      <property-set name="OutlierConfidence" display-name-key="Outlier Confidence Level" of-type="Decimal" usage="bound" required="false"/>
+      <property-set name="Status" display-name-key="Opportunity Status" description-key="Determine when an opportunity is won or lost" of-type="OptionSet" usage="bound" required="false"/>
+    </data-set>
+
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="atlas.min.css" order="2" />
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.46.2" />
+      <!-- UNCOMMENT TO ADD MORE RESOURCES
+      <css path="css/SoW.css" order="1" />
+      <resx path="strings/SoW.1033.resx" version="1.0.0" />
+      -->
+    </resources>
+    <!-- UNCOMMENT TO ENABLE THE SPECIFIED API
+    <feature-usage>
+      <uses-feature name="Device.captureAudio" required="true" />
+      <uses-feature name="Device.captureImage" required="true" />
+      <uses-feature name="Device.captureVideo" required="true" />
+      <uses-feature name="Device.getBarcodeValue" required="true" />
+      <uses-feature name="Device.getCurrentPosition" required="true" />
+      <uses-feature name="Device.pickFile" required="true" />
+      <uses-feature name="Utility" required="true" />
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+    -->
+  </control>
+</manifest>
