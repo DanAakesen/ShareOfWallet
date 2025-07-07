@@ -13,8 +13,7 @@ export class SoW implements ComponentFramework.ReactControl<IInputs, IOutputs> {
     private notifyOutputChanged: () => void;
 
     constructor() {
-        console.log("Version: 222");
-        console.log("root folder changed");
+        console.log("Version: 231");
     }
 
     public init(

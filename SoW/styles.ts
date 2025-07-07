@@ -584,33 +584,6 @@ export const barGrowContainerStyles: React.CSSProperties = {
   width: '100%'
 };
 
-export const getBarStyles = (heightPercent: number, index: number, hoveredBarIndex: number | null): React.CSSProperties => {
-  const barColors = [
-    { start: copilotColors.blue, end: copilotColors.lightBlue },
-    { start: copilotColors.lightBlue, end: copilotColors.purple },
-    { start: copilotColors.purple, end: copilotColors.blue }
-  ];
-  
-  const colorIndex = index % barColors.length;
-  const barGradient = `linear-gradient(to top, ${barColors[colorIndex].start}, ${barColors[colorIndex].end})`;
-
-  return { 
-    height: `${heightPercent}%`, 
-    width: '70%',
-    minHeight: '2px',
-    background: barGradient,
-    borderRadius: '3px 3px 0 0',
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: hoveredBarIndex === index ? '0 0 8px rgba(0, 120, 212, 0.6)' : 'none',
-    transition: 'box-shadow 0.2s ease, transform 0.2s ease',
-    transform: hoveredBarIndex === index ? 'scale(1.02)' : 'scale(1)',
-    cursor: 'pointer'
-  };
-};
-
 export const barValueStyles: React.CSSProperties = { 
   color: 'white',
   fontSize: 11,
@@ -650,14 +623,6 @@ export const tooltipArrowStyles: React.CSSProperties = {
   borderTop: '5px solid rgba(0, 0, 0, 0.8)' 
 };
 
-export const barYearLabelStyles = (colorStart: string): React.CSSProperties => ({ 
-  position: 'absolute',
-  bottom: -30, 
-  fontSize: 13, 
-  fontWeight: 600,
-  color: colorStart
-});
-
 export const chartLegendContainerStyles: React.CSSProperties = { 
   display: 'flex', 
   justifyContent: 'center', 
@@ -666,14 +631,6 @@ export const chartLegendContainerStyles: React.CSSProperties = {
   backgroundColor: 'rgba(0, 0, 0, 0.02)',
   padding: '8px 12px',
   borderRadius: '4px'
-};
-
-export const chartLegendBarStyles: React.CSSProperties = { 
-  width: 30, 
-  height: 4, 
-  background: copilotColors.gradient, 
-  marginRight: 8, 
-  borderRadius: 2 
 };
 
 export const chartLegendTextStyles: React.CSSProperties = { 
@@ -723,25 +680,11 @@ export const predictionLegendContainerStyles: React.CSSProperties = {
   marginTop: 30 
 };
 
-export const predictionLegendItemStyles: React.CSSProperties = { 
-  display: 'flex', 
-  alignItems: 'center', 
-  marginRight: 20 
-};
-
 export const predictionLineStyles: React.CSSProperties = { 
-  width: 25, 
+  width: 20, 
   height: 3, 
   backgroundColor: copilotColors.blue, 
-  marginRight: 8 
-};
-
-export const predictionDashedLineStyles: React.CSSProperties = { 
-  width: 25, 
-  height: 3, 
-  backgroundColor: copilotColors.purple,
-  marginRight: 8,
-  backgroundImage: `repeating-linear-gradient(90deg, ${copilotColors.purple}, ${copilotColors.purple} 6px, transparent 6px, transparent 9px)` 
+  marginRight: 4 
 };
 
 // Card Active Tab Styles
@@ -794,12 +737,6 @@ export const opportunityHeaderStyles: React.CSSProperties = {
   justifyContent: 'space-between', 
   alignItems: 'center', 
   marginBottom: 10 
-};
-
-export const opportunityTitleStyles: React.CSSProperties = { 
-  fontSize: 15, 
-  fontWeight: 600,
-  color: copilotColors.blue
 };
 
 export const opportunityValueStyles: React.CSSProperties = { 
@@ -1019,7 +956,9 @@ export const winLossRatioContainerStyles: React.CSSProperties = {
 
 // Style for clickable opportunity names
 export const clickableNameStyle: React.CSSProperties = {
-  ...opportunityTitleStyles,
+  fontSize: 15, 
+  fontWeight: 600,
+  color: copilotColors.blue,
   cursor: 'pointer',
   textDecoration: 'none',
   transition: 'color 0.2s ease'

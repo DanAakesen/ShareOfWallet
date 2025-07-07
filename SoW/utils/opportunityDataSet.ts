@@ -266,12 +266,29 @@ export const parseDecimalValue = (value: any): number => {
 export const processOpportunitiesForChart = (opportunities: any[]): {[year: number]: number} => {
   const oppsByYear: {[year: number]: number} = {};
   
-  opportunities.forEach(opp => {
-    if (!opp.closeDate || !opp.revenue) return;
+  opportunities.forEach((opp, index) => {
+    if (!opp.closeDate || !opp.revenue) {
+      return;
+    }
     
     // Parse date string to get year
     try {
-      const year = new Date(opp.closeDate).getFullYear();
+      let year: number;
+      
+      // Handle DD/MM/YYYY format (like "31/12/2024")
+      if (opp.closeDate.includes('/')) {
+        const parts = opp.closeDate.split('/');
+        if (parts.length === 3) {
+          // Assume DD/MM/YYYY format
+          year = parseInt(parts[2], 10);
+        } else {
+          console.warn(`Invalid date format: ${opp.closeDate}`);
+          return;
+        }
+      } else {
+        // Try standard Date parsing as fallback
+        year = new Date(opp.closeDate).getFullYear();
+      }
       
       // Only process years that make sense (between 2000-2050)
       if (year >= 2000 && year <= 2050) {
@@ -279,9 +296,11 @@ export const processOpportunitiesForChart = (opportunities: any[]): {[year: numb
           oppsByYear[year] = 0;
         }
         oppsByYear[year] += opp.revenue;
+      } else {
+        console.warn(`Year ${year} out of valid range for opportunity:`, opp.name);
       }
     } catch (err) {
-      console.warn("Error parsing date:", opp.closeDate);
+      console.warn("Error parsing date:", opp.closeDate, err);
     }
   });
   

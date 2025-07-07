@@ -17,24 +17,19 @@ import {
   barsFlexContainerStyles,
   barItemStyles,
   barGrowContainerStyles,
-  getBarStyles,
   barValueStyles,
   barTooltipStyles,
   getStackedBarStyles,  // Import from styles instead of opportunityDataSet
   tooltipTitleStyles,
   tooltipArrowStyles,
-  barYearLabelStyles,
   chartLegendContainerStyles,
-  chartLegendBarStyles,
   chartLegendTextStyles,
   predictionChartContainerStyles,
   predictionAxisLabelsStyles,
   predictionXAxisStyles,
   predictionXAxisLabelStyles,
   predictionLegendContainerStyles,
-  predictionLegendItemStyles,
   predictionLineStyles,
-  predictionDashedLineStyles,
   activeOpportunitiesContainerStyles,
   opportunityStatBoxStyles,
   opportunityStatLabelStyles,
@@ -42,7 +37,6 @@ import {
   opportunitiesListContainerStyles,
   opportunityItemStyles,
   opportunityHeaderStyles,
-  opportunityTitleStyles,
   opportunityValueStyles,
   opportunityDetailsStyles,
   progressBarContainerStyles,
@@ -80,7 +74,6 @@ import {
 
 // Update imports to include the new utility function
 import { 
-  parseDecimalValue, 
   processOpportunitiesForChart, 
   getOutlierConfidenceLevel,
   calculateTrendLine,
@@ -122,6 +115,12 @@ export const InsightCard: React.FC<InsightCardProps> = ({
   const [activeTab, setActiveTab] = useState('active');
   const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
   const [countryOpportunities, setCountryOpportunities] = useState<any[]>([]);
+  const [hoveredPredictionPoint, setHoveredPredictionPoint] = useState<{x: number, y: number, data: any} | null>(null);
+  
+  // State for toggling prediction chart lines
+  const [showWonOpportunities, setShowWonOpportunities] = useState(true);
+  const [showPredictedWins, setShowPredictedWins] = useState(true);
+  const [showTrendLine, setShowTrendLine] = useState(true);
   
   // Modal state - simplified to directly open the record
   const [modalOpen, setModalOpen] = useState(false);
@@ -160,6 +159,33 @@ export const InsightCard: React.FC<InsightCardProps> = ({
   // Create a wrapper for getProbabilityColor with copilotColors
   const getProbColorWithTheme = (probability: number): string => {
     return getProbabilityColor(probability, copilotColors);
+  };
+
+  // Handle prediction chart hover
+  const handlePredictionHover = (event: React.MouseEvent, year: number, revenue: number, opportunities: any[], isWon: boolean) => {
+    const svgRect = (event.currentTarget.closest('svg') as SVGElement)?.getBoundingClientRect();
+    const circleRect = event.currentTarget.getBoundingClientRect();
+    
+    if (svgRect) {
+      // Calculate position relative to the SVG
+      const relativeX = circleRect.left - svgRect.left + (circleRect.width / 2);
+      const relativeY = circleRect.top - svgRect.top + (circleRect.height / 2);
+      
+      setHoveredPredictionPoint({
+        x: relativeX,
+        y: relativeY,
+        data: {
+          year,
+          revenue,
+          opportunities,
+          isWon
+        }
+      });
+    }
+  };
+
+  const handlePredictionHoverLeave = () => {
+    setHoveredPredictionPoint(null);
   };
 
   // Render opportunities won by year for History tab
@@ -378,6 +404,32 @@ export const InsightCard: React.FC<InsightCardProps> = ({
       revenue: predictedOppsByYear[year],
       isPrediction: true
     }));
+
+    // Get opportunities by year for hover tooltips
+    const getOpportunitiesForYear = (year: number, isWon: boolean) => {
+      if (isWon) {
+        return wonOpportunities.filter(opp => {
+          if (!opp.closeDate) return false;
+          const parts = opp.closeDate.split('/');
+          if (parts.length === 3) {
+            const oppYear = parseInt(parts[2], 10);
+            return oppYear === year;
+          }
+          return false;
+        });
+      } else {
+        return predictedWinOpps.filter(opp => {
+          if (!opp.closeDate) return false;
+          const parts = opp.closeDate.split('/');
+          if (parts.length === 3) {
+            const oppYear = parseInt(parts[2], 10);
+            return oppYear === year;
+          }
+          return false;
+        });
+      }
+    };
+    
         
     // Use the helper functions to create the backgroundImage styles
     const trendLineStyleWithColor = {
@@ -392,7 +444,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
     
     return (
       <div style={barChartContainerStyles}>
-        <div style={predictionChartContainerStyles}>
+        <div style={{...predictionChartContainerStyles, position: 'relative'}}>
           {/* Y-axis labels */}
           <div style={predictionAxisLabelsStyles}>
             <Text style={{ fontSize: 9 }}>{formatCurrency(maxRevenue).replace('$', '')}</Text>
@@ -417,7 +469,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
           {/* Chart area with SVG */}
           <svg width={chartWidth} height={chartHeight} style={{ overflow: 'visible', position: 'relative', zIndex: 2 }}>
             {/* Historical data line (blue solid) - completed opportunities with status = Won */}
-            {historicalData.length > 1 && (
+            {showWonOpportunities && historicalData.length > 1 && (
               <path
                 d={`M${getXPosition(historicalData[0].year)},${getYPosition(historicalData[0].revenue)} ${
                   historicalData.slice(1).map(d => `L${getXPosition(d.year)},${getYPosition(d.revenue)}`).join(' ')
@@ -429,7 +481,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
             )}
 
             {/* Prediction data line (purple dashed) - active opportunities with predictedOutcome = 1 */}
-            {predictionData.length > 1 && (
+            {showPredictedWins && predictionData.length > 1 && (
               <path
                 d={`M${getXPosition(predictionData[0].year)},${getYPosition(predictionData[0].revenue)} ${
                   predictionData.slice(1).map(d => `L${getXPosition(d.year)},${getYPosition(d.revenue)}`).join(' ')
@@ -442,7 +494,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
             )}
             
             {/* Trend line (green dotted) - average revenue trend */}
-            {trendLineData.length > 1 && (
+            {showTrendLine && trendLineData.length > 1 && (
               <path
                 d={`M${getXPosition(trendLineData[0].year)},${getYPosition(trendLineData[0].revenue)} ${
                   trendLineData.slice(1).map(d => `L${getXPosition(d.year)},${getYPosition(d.revenue)}`).join(' ')
@@ -455,7 +507,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
             )}
 
             {/* Single data point for historicial data - show as circle */}
-            {historicalData.length === 1 && (
+            {showWonOpportunities && historicalData.length === 1 && (
               <circle
                 cx={getXPosition(historicalData[0].year)}
                 cy={getYPosition(historicalData[0].revenue)}
@@ -467,7 +519,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
             )}
 
             {/* Single data point for predicted data - show as circle */}
-            {predictionData.length === 1 && (
+            {showPredictedWins && predictionData.length === 1 && (
               <circle
                 cx={getXPosition(predictionData[0].year)}
                 cy={getYPosition(predictionData[0].revenue)}
@@ -479,11 +531,8 @@ export const InsightCard: React.FC<InsightCardProps> = ({
             )}
 
             {/* Historical data points - won opportunities */}
-            {historicalData.map((d: {year: number, revenue: number}, i: number) => {
-              // Get text content to measure for dynamic background width
-              const textContent = formatCurrency(d.revenue).replace('$', '');
-              // Calculate dynamic width (each character is roughly 5-6px wide for 9px font, add 10px padding)
-              const backgroundWidth = Math.max((textContent.length * 6) + 10, 40);
+            {showWonOpportunities && historicalData.map((d: {year: number, revenue: number}, i: number) => {
+              const yearOpportunities = getOpportunitiesForYear(d.year, true);
               
               return (
                 <g key={`hist-${i}`}>
@@ -494,39 +543,17 @@ export const InsightCard: React.FC<InsightCardProps> = ({
                     fill="white"
                     stroke={copilotColors.blue}
                     strokeWidth={2}
+                    style={{ cursor: 'pointer' }}
+                    onMouseEnter={(e) => handlePredictionHover(e, d.year, d.revenue, yearOpportunities, true)}
+                    onMouseLeave={handlePredictionHoverLeave}
                   />
-                  {/* Add white background rectangle behind the text */}
-                  <rect
-                    x={getXPosition(d.year) - (backgroundWidth / 2)}
-                    y={getYPosition(d.revenue) - 28}
-                    width={backgroundWidth}
-                    height={18}
-                    rx={4}
-                    fill="white"
-                    fillOpacity={1} // Ensure 100% opacity to hide grid lines
-                    stroke="rgba(0,0,0,0.1)"
-                    strokeWidth={0.5}
-                  />
-                  <text
-                    x={getXPosition(d.year)}
-                    y={getYPosition(d.revenue) - 15}
-                    textAnchor="middle"
-                    fontSize={9}
-                    fontWeight="bold"
-                    fill="#333"
-                  >
-                    {textContent}
-                  </text>
                 </g>
               );
             })}
 
             {/* Prediction data points - predicted to win opportunities */}
-            {predictionData.map((d, i) => {
-              // Get text content to measure for dynamic background width
-              const textContent = formatCurrency(d.revenue).replace('$', '');
-              // Calculate dynamic width (each character is roughly 5-6px wide for 9px font, add 10px padding)
-              const backgroundWidth = Math.max((textContent.length * 6) + 10, 40);
+            {showPredictedWins && predictionData.map((d, i) => {
+              const yearOpportunities = getOpportunitiesForYear(d.year, false);
               
               return (
                 <g key={`pred-${i}`}>
@@ -537,49 +564,270 @@ export const InsightCard: React.FC<InsightCardProps> = ({
                     fill="white"
                     stroke={copilotColors.purple}
                     strokeWidth={2}
+                    style={{ cursor: 'pointer' }}
+                    onMouseEnter={(e) => handlePredictionHover(e, d.year, d.revenue, yearOpportunities, false)}
+                    onMouseLeave={handlePredictionHoverLeave}
                   />
-                  {/* Add white background rectangle behind the text */}
-                  <rect
-                    x={getXPosition(d.year) - (backgroundWidth / 2)}
-                    y={getYPosition(d.revenue) - 28}
-                    width={backgroundWidth}
-                    height={18}
-                    rx={4}
-                    fill="white"
-                    fillOpacity={1} // Ensure 100% opacity to hide grid lines
-                    stroke="rgba(0,0,0,0.1)"
-                    strokeWidth={0.5}
-                  />
-                  <text
-                    x={getXPosition(d.year)}
-                    y={getYPosition(d.revenue) - 15}
-                    textAnchor="middle"
-                    fontSize={9}
-                    fontWeight="bold"
-                    fill="#333"
-                  >
-                    {textContent}
-                  </text>
                 </g>
               );
             })}
           </svg>
         </div>
 
-        {/* Legend - update to use the imported styles with color */}
-        <div style={predictionLegendContainerStyles}>
-          <div style={predictionLegendItemStyles}>
-            <div style={predictionLineStyles} />
-            <Text style={{ fontSize: 11 }}>Won Opportunities</Text>
+        {/* Prediction Chart Hover Tooltip */}
+        {hoveredPredictionPoint && (
+          <div style={{
+            position: 'absolute',
+            left: (() => {
+              const tooltipWidth = 250; // Estimated tooltip width
+              const chartWidth = 320; // SVG chart width
+              const padding = 10; // Padding from edges
+              
+              // If circle is in the left half, show tooltip to the right (closer)
+              if (hoveredPredictionPoint.x < chartWidth / 2) {
+                return Math.min(hoveredPredictionPoint.x + 8, chartWidth - tooltipWidth - padding);
+              } 
+              // If circle is in the right half, show tooltip to the left (closer)
+              else {
+                return Math.max(hoveredPredictionPoint.x - tooltipWidth - 8, padding);
+              }
+            })(),
+            top: Math.max(hoveredPredictionPoint.y - 80, 10), // Position closer above circle
+            backgroundColor: '#323130', // Dark background like history tab
+            border: '1px solid #605e5c',
+            borderRadius: '4px',
+            padding: '8px 12px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            fontSize: '11px',
+            zIndex: 1000,
+            minWidth: '200px',
+            maxWidth: '250px',
+            pointerEvents: 'none', // Prevent tooltip from interfering with mouse events
+            color: 'white' // White text
+          }}>
+            <div style={{ 
+              fontWeight: 'bold', 
+              marginBottom: '6px',
+              fontSize: '12px',
+              borderBottom: '1px solid #605e5c',
+              paddingBottom: '4px',
+              color: 'white'
+            }}>
+              {hoveredPredictionPoint.data.year} - Total Revenue: {formatCurrency(hoveredPredictionPoint.data.revenue)}
+            </div>
+            
+            {/* List of opportunities with headers */}
+            {hoveredPredictionPoint.data.opportunities.length > 0 && (
+              <div style={{ paddingTop: '4px' }}>
+                {/* Column Headers */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  marginBottom: '4px',
+                  fontSize: '10px',
+                  gap: '8px',
+                  fontWeight: 'bold',
+                  color: '#f3f2f1', // Slightly lighter text for headers
+                  borderBottom: '1px solid #605e5c',
+                  paddingBottom: '2px'
+                }}>
+                  <span style={{ 
+                    flex: '1', 
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    Opportunity
+                  </span>
+                  <span style={{ 
+                    minWidth: '30px',
+                    textAlign: 'center'
+                  }}>
+                    Type
+                  </span>
+                  <span style={{ 
+                    minWidth: '50px',
+                    textAlign: 'right'
+                  }}>
+                    Revenue
+                  </span>
+                </div>
+                
+                {/* Opportunity Rows */}
+                {hoveredPredictionPoint.data.opportunities.slice(0, 5).map((opp: any, index: number) => (
+                  <div key={index} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    marginBottom: '2px',
+                    fontSize: '10px',
+                    gap: '8px',
+                    color: 'white'
+                  }}>
+                    <span style={{ 
+                      flex: '1', 
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {opp.name}
+                    </span>
+                    <span style={{ 
+                      color: hoveredPredictionPoint.data.isWon ? copilotColors.green : copilotColors.purple,
+                      fontWeight: 'bold',
+                      minWidth: '30px',
+                      textAlign: 'center'
+                    }}>
+                      {hoveredPredictionPoint.data.isWon ? 'Won' : 'Pred'}
+                    </span>
+                    <span style={{ 
+                      fontWeight: 'bold',
+                      minWidth: '50px',
+                      textAlign: 'right',
+                      color: 'white'
+                    }}>
+                      {formatCurrency(opp.revenue).replace('$', '')}
+                    </span>
+                  </div>
+                ))}
+                {hoveredPredictionPoint.data.opportunities.length > 5 && (
+                  <div style={{ 
+                    fontSize: '10px', 
+                    color: '#a19f9d', // Muted color for "more" text
+                    marginTop: '4px',
+                    fontStyle: 'italic'
+                  }}>
+                    +{hoveredPredictionPoint.data.opportunities.length - 5} more...
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Dynamic arrow pointing to the circle */}
+            <div style={{
+              position: 'absolute',
+              top: (() => {
+                // Position arrow to point toward the circle (adjusted for closer positioning)
+                const arrowY = Math.min(Math.max(80, 15), 70); // Adjusted for closer positioning
+                return `${arrowY}px`;
+              })(),
+              left: (() => {
+                const tooltipWidth = 250;
+                const chartWidth = 320;
+                
+                // If tooltip is to the right of circle, arrow on left side
+                if (hoveredPredictionPoint.x < chartWidth / 2) {
+                  return '-6px';
+                }
+                // If tooltip is to the left of circle, arrow on right side
+                else {
+                  return `${tooltipWidth - 6}px`;
+                }
+              })(),
+              width: 0,
+              height: 0,
+              borderTop: '6px solid transparent',
+              borderBottom: '6px solid transparent',
+              borderRight: hoveredPredictionPoint.x < 320 / 2 ? '6px solid #323130' : 'none',
+              borderLeft: hoveredPredictionPoint.x >= 320 / 2 ? '6px solid #323130' : 'none'
+            }}></div>
           </div>
-          <div style={predictionLegendItemStyles}>
-            <div style={predictionLineStyleWithColor} />
-            <Text style={{ fontSize: 11 }}>Predicted Wins</Text>
-          </div>
-          <div style={predictionLegendItemStyles}>
-            <div style={trendLineStyleWithColor} />
-            <Text style={{ fontSize: 11 }}>Trend Line</Text>
-          </div>
+        )}
+
+        {/* Legend - interactive buttons with colored borders */}
+        <div style={{...predictionLegendContainerStyles, gap: 10}}>
+          {/* Won Opportunities Button */}
+          <button
+            onClick={() => setShowWonOpportunities(!showWonOpportunities)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '3px 3px',
+              border: `1px solid ${copilotColors.blue}`,
+              borderRadius: '4px',
+              backgroundColor: showWonOpportunities ? 'rgba(0, 120, 212, 0.1)' : 'transparent',
+              cursor: 'pointer',
+              fontSize: '11px',
+              color: '#323130',
+              outline: 'none',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <div style={{
+              ...predictionLineStyles,
+              opacity: showWonOpportunities ? 1 : 0.3
+            }} />
+            <Text style={{ 
+              fontSize: 11,
+              opacity: showWonOpportunities ? 1 : 0.6
+            }}>
+              Won Opportunities
+            </Text>
+          </button>
+          
+          {/* Predicted Wins Button */}
+          <button
+            onClick={() => setShowPredictedWins(!showPredictedWins)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '3px 3px',
+              border: `1px solid ${copilotColors.purple}`,
+              borderRadius: '4px',
+              backgroundColor: showPredictedWins ? 'rgba(134, 97, 197, 0.1)' : 'transparent',
+              cursor: 'pointer',
+              fontSize: '11px',
+              color: '#323130',
+              outline: 'none',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <div style={{
+              ...predictionLineStyleWithColor,
+              width: '15px',
+              marginRight: '4px',
+              opacity: showPredictedWins ? 1 : 0.3
+            }} />
+            <Text style={{ 
+              fontSize: 11,
+              opacity: showPredictedWins ? 1 : 0.6
+            }}>
+              Predicted Wins
+            </Text>
+          </button>
+          
+          {/* Trend Line Button */}
+          <button
+            onClick={() => setShowTrendLine(!showTrendLine)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '3px 3px',
+              border: `1px solid ${copilotColors.green}`,
+              borderRadius: '4px',
+              backgroundColor: showTrendLine ? 'rgba(16, 124, 16, 0.1)' : 'transparent',
+              cursor: 'pointer',
+              fontSize: '11px',
+              color: '#323130',
+              outline: 'none',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <div style={{
+              ...trendLineStyleWithColor,
+              width: '15px',
+              marginRight: '4px',
+              opacity: showTrendLine ? 1 : 0.3
+            }} />
+            <Text style={{ 
+              fontSize: 11,
+              opacity: showTrendLine ? 1 : 0.6
+            }}>
+              Trend Line
+            </Text>
+          </button>
         </div>
       </div>
     );
